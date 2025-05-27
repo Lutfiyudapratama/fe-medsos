@@ -14,7 +14,7 @@ const port = 3001
 const hostName = "127.0.0.1"
 
 const corsOption = {
-    origin: ['http://localhost:5173']
+    origin: [`http://${hostName}:5173`, `http://localhost:5173`]
 }
 
 app.use('/v1/auth', cors(corsOption), authRoutes(express))

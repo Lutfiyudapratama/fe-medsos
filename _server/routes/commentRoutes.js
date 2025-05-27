@@ -7,7 +7,7 @@ const { post } = require('../models')
 module.exports = (app) => {
     const router = app.Router()
 
-    router.post('/create', authenticateJWT, [
+    router.post('/create-comment', authenticateJWT, [
         body('content_comment_text').notEmpty(),
         body('post_id').notEmpty(async (value) => {
             let postCheck = await post.findOne({

@@ -12,7 +12,7 @@ export const fetchMajor = () => (dispatch) => {
             })
         })
         .catch((err) => {
-            if (err.response.status === 401) {
+            if (err?.response?.status === 401) {
                 window.location.href = '/login'
             }
             dispatch({

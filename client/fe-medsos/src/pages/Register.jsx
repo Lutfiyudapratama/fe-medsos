@@ -1,4 +1,5 @@
 import {
+    Alert,
     Box,
     Button,
     FormControl,
@@ -17,14 +18,17 @@ import { useForm } from 'react-hook-form'
 import { useDispatch, useSelector } from 'react-redux'
 import { useEffect } from 'react'
 import { fetchMajor } from '../redux/action/majorAction'
+import { authRegister } from '../redux/action/authAction'
 
 const Register = () => {
     const { register, handleSubmit } = useForm()
-    const onSubmit = (value) => console.log(value)
     const major = useSelector(root => root?.major)
+    const auth = useSelector(root => root)
     const dispatch = useDispatch()
 
     useEffect(() => dispatch(fetchMajor()), [])
+
+    const onSubmit = (value) => dispatch(authRegister(value))
 
     return (<>
         <CssBaseline enableColorScheme />
@@ -37,6 +41,10 @@ const Register = () => {
                 >
                     Sign Up
                 </Typography>
+                {
+                    auth?.message !== "" && <Alert severity="success">{auth?.message}</Alert>
+                }
+            
                 <Box
                     component="form"
                     onSubmit={handleSubmit(onSubmit)}
@@ -148,13 +156,13 @@ const Register = () => {
                                 <InputLabel id="demo-simple-select-label-major">Majors</InputLabel>
                                 <Select
                                     id="demo-simple-select"
-                                    {...register('major')}
-                                    label="Major"
+                                    {...register('major_id')}
+                                    label="Majors"
                                 >
                                     {
                                         major?.data?.map((m, i) => <MenuItem
                                             key={i}
-                                            value={"PPLG"}>{m?.name}</MenuItem>)
+                                            value={m?.id}>{m?.name}</MenuItem>)
                                     }
 
                                 </Select>
@@ -186,6 +194,18 @@ const Register = () => {
                             Have account?
                         </Link>
                     </center>
+                    {!!auth?.err &&
+                        !!auth?.err?.errors &&
+                        auth?.err?.errors.map((e, i) => (
+                            <Typography
+                                key={i}
+                                variant="body2"
+                                color="error"
+                                sx={{ textAlign: "center" }}
+                            >
+                                {e.msg}
+                            </Typography>
+                        ))}
                 </Box>
             </CardRegister>
         </SignInContainer>
