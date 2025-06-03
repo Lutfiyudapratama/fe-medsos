@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, } from "react-router-dom";
 import {
   Home as HomeIcon,
   Search as SearchIcon,
@@ -11,39 +11,37 @@ import {
   PushPin,
   Add,
 } from "@mui/icons-material";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchProfile } from "../redux/action/authAction";
+import { fetchPosting } from "../redux/action/postAction";
+
+const WEBSOCKET_URL = "ws://127.0.01:3002";
 
 const Home = () => {
   const navigate = useNavigate();
-
-  // useEffect(() => {
-  //   const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
-  //   if (!isLoggedIn) {
-  //     navigate("/login");
-  //   }
-  // }, [navigate]);
-
+  const dispatch = useDispatch();
+  const profile = useSelector((root) => root?.auth);
+  const post = useSelector((root) => root?.post);
+  // Tambahkan useEffect sesuai permintaan
+  useEffect(() => {
+    dispatch(fetchProfile(profile?.token));
+    dispatch(fetchPosting(profile?.token));
+  })
   const [expanded, setExpanded] = useState(false);
   const [postText, setPostText] = useState("");
   const [postImage, setPostImage] = useState(null);
   const [posts, setPosts] = useState([
     {
-      id: 1,
-      name: "surya",
-      date: "September 14, 2016",
-      content:
-        "MyName is Surya, I am a student at SMK Negeri 1 Cikarang Barat. I am learning to create a web application using ReactJS and Tailwind CSS. This is my first project using these technologies.",
-    },
-    {
-      id: 2,
-      name: "surya",
-      date: "September 14, 2016",
-      content:
-        "MyName is Surya, I am a student at SMK Negeri 1 Cikarang Barat. I am learning to create a web application using ReactJS and Tailwind CSS. This is my first project using these technologies.",
-    },
-  ]);
 
+      id: 1,
+      name: "",
+      date: "",
+      content: "",
+    
+    }]);
   const [chats, setChats] = useState([]);
   const [chatInput, setChatInput] = useState("");
+  const [commentInputs, setCommentInputs] = useState({});
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -65,7 +63,7 @@ const Home = () => {
   };
 
   const handlePost = (e) => {
-    e.preventDefault();
+    
     if (postText.trim() === "") return;
     if (!postImage) {
       const confirmPost = window.confirm("Anda tidak menyertakan gambar. Lanjutkan posting?");
@@ -74,15 +72,48 @@ const Home = () => {
     setPosts([
       {
         id: Date.now(),
-        name: "You",
+        name: profile.name,
+        avatar: profile.avatar,
         date: new Date().toLocaleDateString(),
         content: postText,
         image: postImage,
+        comments: [],
       },
       ...posts,
     ]);
     setPostText("");
     setPostImage(null);
+  };
+
+  const handleCommentInput = (postId, value) => {
+    setCommentInputs((prev) => ({
+      ...prev,
+      [postId]: value,
+    }));
+  };
+
+  const handleAddComment = (e, postId) => {
+    e.preventDefault();
+    const commentText = commentInputs[postId]?.trim();
+    if (!commentText) return;
+    setPosts((prevPosts) =>
+      prevPosts.map((post) =>
+        post.id === postId
+          ? {
+            ...post,
+            comments: [
+              ...(post.comments || []),
+              {
+                id: Date.now(),
+                name: profile.name,
+                text: commentText,
+              },
+            ],
+          }
+          : post
+      )
+    );
+    setCommentInputs((prev) => ({ ...prev, [postId]: "" }));
   };
 
   const handleSendChat = (e) => {
@@ -94,7 +125,7 @@ const Home = () => {
       ...chats,
       {
         id: Date.now(),
-        sender: "You",
+        sender: profile.name,
         text: chatInput,
         time,
       },
@@ -122,7 +153,20 @@ const Home = () => {
       </aside>
 
       <div className="flex-1 flex flex-col min-h-screen ml-48">
-        <header className="fixed top-0 left-48 right-0 h-16 bg-white flex items-center px-8 z-10 shadow-sm"></header>
+        <header className="fixed top-0 left-48 right-0 h-16 bg-white flex items-center px-8 z-10 shadow-sm">
+          {/* Profile Section */}
+          <div className="flex items-center gap-4">
+            <img
+              src={profile.avatar}
+              alt="avatar"
+              className="w-10 h-10 rounded-full object-cover border border-neutral-200"
+            />
+            <div>
+              <div className="font-semibold text-neutral-900">{profile.name}</div>
+              <div className="text-xs text-neutral-400">{profile.bio}</div>
+            </div>
+          </div>
+        </header>
 
         <main className="flex-1 flex flex-col pt-24 px-4 sm:px-0 overflow-y-auto items-center">
           <div className="flex flex-col items-center space-y-6 w-full max-w-lg">
@@ -130,10 +174,11 @@ const Home = () => {
             <div className="w-full bg-white rounded-2xl shadow p-4 flex flex-col border border-neutral-200">
               <form onSubmit={handlePost}>
                 <div className="flex items-end gap-3">
-                  <img alt="avatar" className="w-10 h-10 rounded-full object-cover border border-neutral-200" src="/default-avatar.png" />
+                  <img alt="avatar" className="w-10 h-10 rounded-full object-cover border border-neutral-200" src={profile.avatar} />
                   <textarea
                     className="flex-1 bg-neutral-100 border-none rounded-xl p-2 mb-2 resize-none focus:outline-none focus:ring-2 focus:ring-neutral-300 text-neutral-900"
                     rows={3}
+                    username = {profile.name}
                     placeholder="Start a fichatting..."
                     value={postText}
                     onChange={(e) => setPostText(e.target.value)}
@@ -157,7 +202,7 @@ const Home = () => {
               <div key={post.id} className="w-full bg-white rounded-2xl shadow border border-neutral-200">
                 <div className="flex items-end justify-between p-4 pb-2">
                   <div className="flex items-end">
-                    <img src="/default-avatar.png" alt="avatar" className="w-10 h-10 rounded-full object-cover border border-neutral-200" />
+                    <img src={post.avatar || "/default-avatar.png"} alt="avatar" className="w-10 h-10 rounded-full object-cover border border-neutral-200" />
                     <div className="ml-3">
                       <div className="font-semibold text-neutral-900">{post.name}</div>
                       <div className="text-xs text-neutral-400">{post.date}</div>
@@ -174,6 +219,38 @@ const Home = () => {
                   <button className="rounded-full p-2 text-neutral-500 hover:bg-neutral-200 hover:text-blue-500 transition"><Share /></button>
                   <button className={`ml-auto rounded-full p-2 text-neutral-500 hover:bg-neutral-200 transition ${expanded ? "rotate-180" : ""}`} onClick={() => setExpanded((prev) => !prev)} aria-expanded={expanded} aria-label="show more"><ExpandMore /></button>
                 </div>
+                {/* Kolom Komentar */}
+                <div className="px-4 pb-4">
+                  <div className="mt-2">
+                    <div className="font-semibold text-neutral-700 mb-1">Komentar</div>
+                    <div className="space-y-2 mb-2">
+                      {(post.comments || []).map((comment) => (
+                        <div key={comment.id} className="flex items-start gap-2">
+                          <span className="font-semibold text-sm">{comment.name}:</span>
+                          <span className="text-sm">{comment.text}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <form
+                      className="flex gap-2"
+                      onSubmit={(e) => handleAddComment(e, post.id)}
+                    >
+                      <input
+                        type="text"
+                        placeholder="Tulis komentar..."
+                        className="flex-1 rounded-full bg-neutral-100 px-3 py-1 text-sm border border-neutral-200 focus:outline-none focus:ring-2 focus:ring-neutral-300"
+                        value={commentInputs[post.id] || ""}
+                        onChange={(e) => handleCommentInput(post.id, e.target.value)}
+                      />
+                      <button
+                        type="submit"
+                        className="bg-neutral-900 text-white px-4 py-1 rounded-full text-sm font-semibold hover:bg-neutral-800 transition"
+                      >
+                        Kirim
+                      </button>
+                    </form>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
@@ -187,8 +264,8 @@ const Home = () => {
           </div>
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
             {chats.map((chat) => (
-              <div key={chat.id} className={`flex flex-col ${chat.sender === "You" ? "items-end" : "items-start"}`}>
-                <div className={`${chat.sender === "You" ? "bg-blue-500 text-white" : "bg-neutral-200 text-neutral-800"} px-4 py-2 rounded-2xl ${chat.sender === "You" ? "rounded-br-sm" : "rounded-bl-sm"} max-w-[70%]`}>
+              <div key={chat.id} className={`flex flex-col ${chat.sender === profile.name ? "items-end" : "items-start"}`}>
+                <div className={`${chat.sender === profile.name ? "bg-blue-500 text-white" : "bg-neutral-200 text-neutral-800"} px-4 py-2 rounded-2xl ${chat.sender === profile.name ? "rounded-br-sm" : "rounded-bl-sm"} max-w-[70%]`}>
                   {chat.text}
                 </div>
                 <span className="text-xs text-neutral-400 mt-1">{chat.sender} • {chat.time}</span>

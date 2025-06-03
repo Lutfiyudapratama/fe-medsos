@@ -1,6 +1,6 @@
 import { Box, Button, FormControl, FormLabel, TextField, Typography } from '@mui/material'
 import CssBaseline from '@mui/material/CssBaseline'
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { Card, SignInContainer } from "../utils/style"
 import { useSelector, useDispatch } from 'react-redux'
 import { useForm } from 'react-hook-form'
@@ -10,7 +10,7 @@ const Login = () => {
     const { register, handleSubmit } = useForm()
     const {auth} = useSelector(root => root)
     const dispatch = useDispatch()
-
+    const navigate = useNavigate()
     const onSubmit = (value) => dispatch(authLogin(value))
 
 
